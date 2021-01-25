@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "react-modal";
 import DateTimePicker from "react-datetime-picker";
 import moment from "moment";
 import Swal from "sweetalert2";
+import { useDispatch, useSelector } from "react-redux";
+import { uiCloseModal } from "../../actions/ui";
+import {
+  eventAddNew,
+  eventClearActiveEvent,
+  eventUpdated,
+} from "../../actions/events";
 
 const customStyles = {
   content: {
@@ -19,24 +26,41 @@ Modal.setAppElement("#root");
 
 const now = moment().minutes(0).seconds(0).add(1, "hours");
 
+const nowPlus1 = moment().minutes(0).seconds(0).add(2, "hours");
+
+const initEvent = {
+  title: "",
+  notes: "",
+  start: now.toDate(),
+  end: nowPlus1.toDate(),
+};
+
 export const CalendarModal = () => {
-  const nowPlus1 = moment().minutes(0).seconds(0).add(2, "hours");
+  // useSelector -> Allows you to extract data from the Redux store state, using a selector function.
+  const { modalOpen } = useSelector((state) => state.ui);
+  const { activeEvent } = useSelector((state) => state.calendar);
+  const dispatch = useDispatch();
+
   const [startDate, setStartDate] = useState(now.toDate());
   const [endDate, setEndDate] = useState(nowPlus1.toDate());
   const [validTitle, setValidTitle] = useState(true);
 
-  const [formValues, setFormValues] = useState({
-    title: "event",
-    notes: "",
-    start: now.toDate(),
-    end: nowPlus1.toDate(),
-  });
+  const [formValues, setFormValues] = useState(initEvent);
 
   const { notes, title, start, end } = formValues;
 
+  useEffect(() => {
+    if (activeEvent) {
+      setFormValues(activeEvent);
+    }
+    //console.log(activeEvent);
+  }, [activeEvent, setFormValues]);
+
   const closeModal = () => {
     //setIsOpen(false);
-    //close modal
+    dispatch(uiCloseModal());
+    dispatch(eventClearActiveEvent());
+    setFormValues(initEvent);
   };
 
   const handleInputChange = ({ target }) => {
@@ -77,7 +101,23 @@ export const CalendarModal = () => {
       return setValidTitle(false);
     }
 
-    // store in db
+    // update event
+    if (activeEvent) {
+      dispatch(eventUpdated(formValues));
+    } else {
+      // store in db
+      console.log(formValues);
+      dispatch(
+        eventAddNew({
+          ...formValues,
+          id: new Date().getTime(),
+          user: {
+            _id: "123",
+            name: "John",
+          },
+        })
+      );
+    }
 
     setValidTitle(true);
     closeModal();
@@ -85,7 +125,7 @@ export const CalendarModal = () => {
 
   return (
     <Modal
-      isOpen={true}
+      isOpen={modalOpen}
       /* onAfterOpen={afterOpenModal} */
       onRequestClose={closeModal}
       style={customStyles}

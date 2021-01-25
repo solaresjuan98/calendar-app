@@ -5,11 +5,15 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CalendarEvent } from "./CalendarEvent";
 import { CalendarModal } from "./CalendarModal";
+import { useDispatch, useSelector } from "react-redux";
+import { uiOpenModal } from "../../actions/ui";
+import { EventSetActive } from "../../actions/events";
+import { AddNewFab } from "../ui/AddNewFab";
 
 // Setup the localizer by providing the moment (or globalize) Object
 // to the correct localizer.
 const localizer = momentLocalizer(moment);
-const events = [
+/* const events = [
   {
     title: "My birthday",
     start: moment().toDate(), // is valid new Date() too
@@ -22,20 +26,26 @@ const events = [
     },
   },
 ];
-
+ */
 export const CalendarScreen = () => {
+  const dispatch = useDispatch();
+
+  // read events from store
+  const { events } = useSelector((state) => state.calendar);
+
   const [lastView, setlastView] = useState(
     localStorage.getItem("lastView") || "month"
   );
 
   // event to show modal
   const onDoubleClick = (e) => {
-    console.log(e);
+    dispatch(uiOpenModal());
   };
 
   // select event
   const onSelectEvent = (e) => {
-    console.log(e);
+    dispatch(EventSetActive(e));
+    //dispatch(uiOpenModal());
   };
 
   //
@@ -77,6 +87,7 @@ export const CalendarScreen = () => {
         }}
       />
 
+      <AddNewFab />
       <CalendarModal />
     </div>
   );
